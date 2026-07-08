@@ -1,0 +1,992 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>lll Social Snippet Extractor</title>
+<style>
+  :root{
+    --ink:#222220;
+    --ink-soft:#57564f;
+    --paper:#faf9f6;
+    --card:#ffffff;
+    --line:#e6e4de;
+    --accent:#d6552c;
+    --accent-ink:#ffffff;
+    --ok:#2f8f5b;
+    --radius:16px;
+
+    --wa-app:#075e54;
+    --wa-bg:#e5ddd5;
+    --wa-bubble:#dcf8c6;
+
+    --line-app:#06c755;
+    --line-bg:#e7f9ec;
+    --line-bubble:#ffffff;
+
+    --plain-app:#3a3833;
+    --plain-bg:#f2f1ec;
+    --plain-bubble:#ffffff;
+  }
+  :root[data-theme="dark"]{
+    --ink:#f2f1ec;
+    --ink-soft:#a9a79d;
+    --paper:#171613;
+    --card:#201f1c;
+    --line:#3a3833;
+    --accent:#e56a3c;
+    --accent-ink:#171613;
+  }
+  :root[data-theme="light"]{
+    --ink:#222220;
+    --ink-soft:#57564f;
+    --paper:#faf9f6;
+    --card:#ffffff;
+    --line:#e6e4de;
+    --accent:#d6552c;
+    --accent-ink:#ffffff;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]):not([data-theme="dark"]){
+      --ink:#f2f1ec;
+      --ink-soft:#a9a79d;
+      --paper:#171613;
+      --card:#201f1c;
+      --line:#3a3833;
+      --accent:#e56a3c;
+      --accent-ink:#171613;
+    }
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Noto Sans JP","Noto Sans SC",Helvetica,Arial,sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    transition:background .2s ease, color .2s ease;
+  }
+  .wrap{max-width:820px;margin:0 auto;padding:0 16px 64px;}
+
+  .hero{
+    position:relative;
+    overflow:hidden;
+    background:linear-gradient(135deg,#1c1b19 0%,#2c231e 55%,#3a2a1f 100%);
+    padding:20px 20px 24px;
+    margin-bottom:28px;
+  }
+  .hero::before{
+    content:"";
+    position:absolute;
+    width:340px;height:340px;
+    right:-120px;top:-140px;
+    background:radial-gradient(circle,var(--accent) 0%,transparent 70%);
+    opacity:.35;
+    filter:blur(10px);
+  }
+  .hero::after{
+    content:"";
+    position:absolute;
+    width:260px;height:260px;
+    left:-100px;bottom:-160px;
+    background:radial-gradient(circle,#e0a64a 0%,transparent 70%);
+    opacity:.18;
+    filter:blur(10px);
+  }
+  .hero-top{
+    position:relative;
+    max-width:820px;
+    margin:0 auto 14px;
+    display:flex;
+    justify-content:flex-end;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .hero-inner{
+    position:relative;
+    max-width:820px;
+    margin:0 auto;
+    display:flex;
+    align-items:center;
+    gap:16px;
+  }
+  .hero img{
+    height:30px;width:auto;display:block;
+    filter:brightness(0) invert(1);
+    flex-shrink:0;
+  }
+  .hero .title{
+    font-size:13px;
+    color:#d8d5cd;
+    border-left:1px solid rgba(255,255,255,.2);
+    padding-left:14px;
+    line-height:1.4;
+  }
+  .hero .title strong{
+    display:block;
+    font-size:16px;
+    color:#fff;
+    font-weight:700;
+    margin-bottom:2px;
+  }
+
+  .lang-switch{
+    display:flex;
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.16);
+    border-radius:9px;
+    padding:2px;
+    gap:2px;
+  }
+  .lang-switch button{
+    padding:6px 10px;
+    font-size:12px;
+    font-weight:600;
+    border:none;
+    background:transparent;
+    color:#cfccc3;
+    border-radius:7px;
+    cursor:pointer;
+  }
+  .lang-switch button.active{
+    background:#fff;
+    color:#1c1b19;
+  }
+  .theme-toggle{
+    width:32px;height:32px;
+    border-radius:9px;
+    border:1px solid rgba(255,255,255,.16);
+    background:rgba(255,255,255,.08);
+    color:#fff;
+    font-size:15px;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+
+  .layout{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:20px;
+  }
+  @media (min-width:760px){
+    .layout{grid-template-columns:1fr 1fr;align-items:start;}
+  }
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:20px;
+    box-shadow:0 1px 2px rgba(0,0,0,.03);
+    transition:background .2s ease, border-color .2s ease;
+  }
+  .card h2{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--ink-soft);
+    margin:0 0 16px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  label{
+    display:block;
+    font-size:13px;
+    font-weight:600;
+    margin-bottom:6px;
+    margin-top:16px;
+  }
+  label:first-of-type{margin-top:0;}
+  label .hint{font-weight:400;color:var(--ink-soft);}
+  input[type=text], input[type=url], textarea, select{
+    width:100%;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:10px 12px;
+    font-size:14px;
+    font-family:inherit;
+    background:var(--paper);
+    color:var(--ink);
+    resize:vertical;
+    transition:border-color .15s ease;
+  }
+  input:focus, textarea:focus, select:focus{
+    outline:none;
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(214,85,44,.15);
+  }
+  textarea#paragraph{min-height:100px;}
+  .row{display:flex;gap:10px;}
+  .row > div{flex:1;}
+
+  .charcount{
+    font-size:11px;
+    color:var(--ink-soft);
+    text-align:right;
+    margin-top:4px;
+  }
+  .charcount.over{color:var(--accent);}
+
+  .segmented{
+    position:relative;
+    display:flex;
+    margin-top:6px;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:11px;
+    padding:3px;
+  }
+  .segmented .pill{
+    position:absolute;
+    top:3px;bottom:3px;left:3px;
+    width:calc(33.333% - 2px);
+    background:var(--ink);
+    border-radius:8px;
+    transition:transform .22s cubic-bezier(.4,0,.2,1);
+    z-index:0;
+  }
+  .segmented button{
+    position:relative;
+    z-index:1;
+    flex:1;
+    padding:8px 6px;
+    font-size:13px;
+    font-weight:600;
+    border:none;
+    background:transparent;
+    color:var(--ink-soft);
+    border-radius:8px;
+    cursor:pointer;
+    transition:color .2s ease;
+  }
+  .segmented button.active{color:var(--paper);}
+
+  /* phone mockup */
+  .phone{
+    border-radius:18px;
+    overflow:hidden;
+    border:1px solid var(--line);
+    background:#000;
+  }
+  .phone-bar{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 14px;
+    color:#fff;
+    background:var(--app-color, var(--wa-app));
+    transition:background .25s ease;
+  }
+  .phone-avatar{
+    width:30px;height:30px;border-radius:50%;
+    background:#fff;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .phone-avatar img{width:16px;height:auto;}
+  .phone-bar .who{font-size:13px;font-weight:600;line-height:1.2;}
+  .phone-bar .status{font-size:10.5px;opacity:.8;}
+  .phone-screen{
+    background:var(--screen-bg, var(--wa-bg));
+    padding:16px 12px;
+    min-height:220px;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    transition:background .25s ease;
+  }
+  .bubble-wrap{display:flex;justify-content:flex-end;}
+  .bubble{
+    max-width:88%;
+    background:var(--bubble-color, var(--wa-bubble));
+    border-radius:10px 10px 2px 10px;
+    padding:8px 10px 6px;
+    font-size:13.5px;
+    line-height:1.5;
+    white-space:pre-wrap;
+    word-wrap:break-word;
+    color:#111;
+    box-shadow:0 1px 1px rgba(0,0,0,.08);
+    transition:background .25s ease;
+  }
+  .bubble b{font-weight:700;}
+  .bubble .lnk{color:#2b6cb0;text-decoration:underline;}
+  .bubble .meta{
+    display:block;
+    text-align:right;
+    font-size:10px;
+    color:#667781;
+    margin-top:4px;
+  }
+  .bubble .meta .tick{color:#4fc3f7;margin-left:2px;}
+  .bubble.empty{color:#8a8a86;font-style:italic;}
+
+  .actions{margin-top:16px;display:flex;flex-direction:column;gap:8px;}
+  .btn{
+    width:100%;
+    padding:12px;
+    font-size:14px;
+    font-weight:700;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    transition:transform .1s ease, background .15s ease, opacity .15s ease;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .btn:active{transform:scale(.98);}
+  .btn-primary{background:var(--accent);color:var(--accent-ink);}
+  .btn-primary:hover{background:#c04a24;}
+  .btn-primary.copied{background:var(--ok);}
+  .btn-outline{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--ink);
+  }
+  .btn-outline:hover{border-color:var(--ink);}
+
+  .reset-link{
+    display:block;
+    text-align:center;
+    margin-top:6px;
+    font-size:12px;
+    color:var(--ink-soft);
+    text-decoration:underline;
+    cursor:pointer;
+    background:none;
+    border:none;
+    width:100%;
+    padding:4px;
+  }
+
+  .history{margin-top:16px;}
+  .history-title{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--ink-soft);
+    margin-bottom:8px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .history-title button{
+    font-size:11px;
+    color:var(--ink-soft);
+    background:none;
+    border:none;
+    text-decoration:underline;
+    cursor:pointer;
+    text-transform:none;
+    letter-spacing:0;
+  }
+  .history ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}
+  .history li button{
+    width:100%;
+    text-align:left;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:8px 10px;
+    font-size:12.5px;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .history li button:hover{border-color:var(--accent);}
+  .history li .htitle{font-weight:600;display:block;}
+  .history li .htime{color:var(--ink-soft);font-size:11px;}
+  .history-empty{font-size:12px;color:var(--ink-soft);}
+
+  footer{
+    text-align:center;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:32px;
+  }
+
+  @keyframes pop{
+    0%{transform:scale(1);}
+    40%{transform:scale(1.04);}
+    100%{transform:scale(1);}
+  }
+  .pop{animation:pop .28s ease;}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-top">
+    <div class="lang-switch" id="langSwitch">
+      <button data-lang="en" class="active">EN</button>
+      <button data-lang="ja">日本語</button>
+      <button data-lang="zh">中文</button>
+    </div>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">🌙</button>
+  </div>
+  <div class="hero-inner">
+    <img src="lllLogo.svg" alt="lll logo" />
+    <div class="title"><strong data-i18n="heroTitle">Social Snippet Extractor</strong><span data-i18n="heroSubtitle">Paste your post details → get a ready broadcast message.</span></div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="layout">
+
+    <div class="card">
+      <h2 data-i18n="step1">1. Post details</h2>
+
+      <label for="title" data-i18n="lblTitle">Blog title</label>
+      <input type="text" id="title" data-i18n-ph="phTitle" placeholder="e.g. Why We Rebuilt Our Onboarding Flow" />
+
+      <label for="paragraph"><span data-i18n="lblParagraph">First paragraph</span> <span class="hint" data-i18n="lblParagraphHint">(excerpt / hook)</span></label>
+      <textarea id="paragraph" data-i18n-ph="phParagraph" placeholder="Paste the opening paragraph of your post here…"></textarea>
+      <div class="charcount" id="charcount">0 characters</div>
+
+      <label for="link" data-i18n="lblLink">Link</label>
+      <input type="url" id="link" placeholder="https://yourblog.com/post-slug" />
+
+      <div class="row">
+        <div>
+          <label for="lead" data-i18n="lblLead">Lead-in</label>
+          <select id="lead"></select>
+        </div>
+        <div>
+          <label for="shorten" data-i18n="lblShorten">Excerpt length</label>
+          <select id="shorten">
+            <option value="0" data-i18n="optFull">Full paragraph</option>
+            <option value="120" data-i18n="optShort">Short (~120 chars)</option>
+            <option value="200" data-i18n="optMedium">Medium (~200 chars)</option>
+          </select>
+        </div>
+      </div>
+
+      <label data-i18n="lblFormat">Format for</label>
+      <div class="segmented" id="platform">
+        <div class="pill" id="pill"></div>
+        <button data-val="whatsapp" class="active">WhatsApp</button>
+        <button data-val="line">LINE</button>
+        <button data-val="plain" data-i18n="lblPlain">Plain text</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="step2">2. Live preview</h2>
+
+      <div class="phone">
+        <div class="phone-bar" id="phoneBar">
+          <div class="phone-avatar"><img src="lllLogo.svg" alt="" /></div>
+          <div>
+            <div class="who" id="phoneWho" data-i18n="phoneWho">Your Blog</div>
+            <div class="status" data-i18n="phoneStatus">online</div>
+          </div>
+        </div>
+        <div class="phone-screen" id="phoneScreen">
+          <div class="bubble-wrap">
+            <div class="bubble" id="preview"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="copyBtn" data-i18n="btnCopy">Copy message</button>
+        <button class="btn btn-outline" id="shareBtn">Open in WhatsApp</button>
+      </div>
+      <button class="reset-link" id="resetBtn" data-i18n="btnReset">Clear all fields</button>
+
+      <div class="history">
+        <div class="history-title">
+          <span data-i18n="historyTitle">Recent snippets</span>
+          <button id="clearHistory" data-i18n="btnClear">clear</button>
+        </div>
+        <ul id="historyList"></ul>
+        <div class="history-empty" id="historyEmpty" data-i18n="historyEmptyText">Nothing saved yet — copy or share a snippet to keep it here.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer data-i18n="footerText">Nothing you type here leaves your browser — this runs entirely client-side.</footer>
+</div>
+
+<script>
+(function(){
+  const LANG = {
+    en: {
+      heroTitle: 'Social Snippet Extractor',
+      heroSubtitle: 'Paste your post details → get a ready broadcast message.',
+      step1: '1. Post details',
+      lblTitle: 'Blog title',
+      phTitle: 'e.g. Why We Rebuilt Our Onboarding Flow',
+      lblParagraph: 'First paragraph',
+      lblParagraphHint: '(excerpt / hook)',
+      phParagraph: 'Paste the opening paragraph of your post here…',
+      charUnit: n => `${n} characters`,
+      lblLink: 'Link',
+      lblLead: 'Lead-in',
+      leadOptions: ['📰 New post:', '✍️ Just published:', '🎉 Announcement:', '💡 Worth a read:', ''],
+      leadLabels: ['📰 New post', '✍️ Just published', '🎉 Announcement', '💡 Worth a read', 'No lead-in'],
+      lblShorten: 'Excerpt length',
+      optFull: 'Full paragraph',
+      optShort: 'Short (~120 chars)',
+      optMedium: 'Medium (~200 chars)',
+      lblFormat: 'Format for',
+      lblPlain: 'Plain text',
+      step2: '2. Live preview',
+      phoneWho: 'Your Blog',
+      phoneStatus: 'online',
+      btnCopy: 'Copy message',
+      btnCopied: 'Copied!',
+      shareLabel: { whatsapp: 'Open in WhatsApp', line: 'Open in LINE' },
+      btnReset: 'Clear all fields',
+      historyTitle: 'Recent snippets',
+      btnClear: 'clear',
+      historyEmptyText: 'Nothing saved yet — copy or share a snippet to keep it here.',
+      untitled: '(untitled)',
+      previewEmpty: 'Your formatted message will appear here…',
+      linkPrefix: { whatsapp: '🔗 Read more:', line: '👉', plain: 'Read more:' },
+      justNow: 'just now',
+      minAgo: n => `${n}m ago`,
+      hourAgo: n => `${n}h ago`,
+      dayAgo: n => `${n}d ago`,
+    },
+    ja: {
+      heroTitle: 'ソーシャルスニペット抽出ツール',
+      heroSubtitle: '投稿情報を貼り付けると → 配信用メッセージがすぐ完成します。',
+      step1: '1. 投稿情報',
+      lblTitle: 'ブログタイトル',
+      phTitle: '例：オンボーディングフローを刷新した理由',
+      lblParagraph: '冒頭の段落',
+      lblParagraphHint: '(抜粋・フック)',
+      phParagraph: '投稿の冒頭の段落を貼り付けてください…',
+      charUnit: n => `${n} 文字`,
+      lblLink: 'リンク',
+      lblLead: 'リード文',
+      leadOptions: ['📰 新着記事:', '✍️ 公開しました:', '🎉 お知らせ:', '💡 おすすめ記事:', ''],
+      leadLabels: ['📰 新着記事', '✍️ 公開しました', '🎉 お知らせ', '💡 おすすめ記事', 'リードなし'],
+      lblShorten: '抜粋の長さ',
+      optFull: '全文',
+      optShort: '短め (~120文字)',
+      optMedium: '中間 (~200文字)',
+      lblFormat: '配信先',
+      lblPlain: 'プレーンテキスト',
+      step2: '2. プレビュー',
+      phoneWho: 'あなたのブログ',
+      phoneStatus: 'オンライン',
+      btnCopy: 'メッセージをコピー',
+      btnCopied: 'コピーしました!',
+      shareLabel: { whatsapp: 'WhatsAppで開く', line: 'LINEで開く' },
+      btnReset: 'すべてクリア',
+      historyTitle: '最近のスニペット',
+      btnClear: '消去',
+      historyEmptyText: 'まだ保存されていません — コピーまたは共有すると表示されます。',
+      untitled: '(無題)',
+      previewEmpty: 'ここに整形済みメッセージが表示されます…',
+      linkPrefix: { whatsapp: '🔗 続きを読む:', line: '👉', plain: '続きを読む:' },
+      justNow: 'たった今',
+      minAgo: n => `${n}分前`,
+      hourAgo: n => `${n}時間前`,
+      dayAgo: n => `${n}日前`,
+    },
+    zh: {
+      heroTitle: '社交媒体摘要生成器',
+      heroSubtitle: '粘贴文章信息 → 一键生成可直接发送的推广消息。',
+      step1: '1. 文章信息',
+      lblTitle: '博客标题',
+      phTitle: '例如：我们为什么重新设计了新手引导流程',
+      lblParagraph: '第一段',
+      lblParagraphHint: '(摘要 / 引言)',
+      phParagraph: '粘贴文章的开头段落…',
+      charUnit: n => `${n} 字`,
+      lblLink: '链接',
+      lblLead: '开场白',
+      leadOptions: ['📰 新文章:', '✍️ 刚刚发布:', '🎉 公告:', '💡 值得一读:', ''],
+      leadLabels: ['📰 新文章', '✍️ 刚刚发布', '🎉 公告', '💡 值得一读', '不加开场白'],
+      lblShorten: '摘要长度',
+      optFull: '完整段落',
+      optShort: '简短 (~120字)',
+      optMedium: '中等 (~200字)',
+      lblFormat: '格式',
+      lblPlain: '纯文本',
+      step2: '2. 实时预览',
+      phoneWho: '你的博客',
+      phoneStatus: '在线',
+      btnCopy: '复制消息',
+      btnCopied: '已复制!',
+      shareLabel: { whatsapp: '在WhatsApp中打开', line: '在LINE中打开' },
+      btnReset: '清空所有字段',
+      historyTitle: '最近的摘要',
+      btnClear: '清除',
+      historyEmptyText: '暂无保存内容 — 复制或分享后会显示在这里。',
+      untitled: '(无标题)',
+      previewEmpty: '格式化后的消息将显示在此处…',
+      linkPrefix: { whatsapp: '🔗 阅读更多:', line: '👉', plain: '阅读更多:' },
+      justNow: '刚刚',
+      minAgo: n => `${n}分钟前`,
+      hourAgo: n => `${n}小时前`,
+      dayAgo: n => `${n}天前`,
+    },
+  };
+
+  const els = {
+    title: document.getElementById('title'),
+    paragraph: document.getElementById('paragraph'),
+    link: document.getElementById('link'),
+    lead: document.getElementById('lead'),
+    shorten: document.getElementById('shorten'),
+    charcount: document.getElementById('charcount'),
+    preview: document.getElementById('preview'),
+    copyBtn: document.getElementById('copyBtn'),
+    shareBtn: document.getElementById('shareBtn'),
+    resetBtn: document.getElementById('resetBtn'),
+    platform: document.getElementById('platform'),
+    pill: document.getElementById('pill'),
+    phoneBar: document.getElementById('phoneBar'),
+    phoneScreen: document.getElementById('phoneScreen'),
+    phoneWho: document.getElementById('phoneWho'),
+    historyList: document.getElementById('historyList'),
+    historyEmpty: document.getElementById('historyEmpty'),
+    clearHistory: document.getElementById('clearHistory'),
+    langSwitch: document.getElementById('langSwitch'),
+    themeToggle: document.getElementById('themeToggle'),
+  };
+
+  const STORAGE_KEY = 'lll-snippet-extractor';
+  const HISTORY_KEY = 'lll-snippet-history';
+  const THEME_KEY = 'lll-theme';
+  const LANG_KEY = 'lll-lang';
+  const PLATFORMS = ['whatsapp','line','plain'];
+  let platform = 'whatsapp';
+  let lang = 'en';
+  let leadIndex = 0;
+
+  const PLATFORM_META = {
+    whatsapp: { app:'#075e54', bg:'#e5ddd5', bubble:'#dcf8c6' },
+    line:     { app:'#06c755', bg:'#e7f9ec', bubble:'#ffffff' },
+    plain:    { app:'#3a3833', bg:'#f2f1ec', bubble:'#ffffff' },
+  };
+
+  function t(){ return LANG[lang]; }
+
+  function truncate(text, limit){
+    if(!limit || text.length <= limit) return text;
+    const cut = text.slice(0, limit);
+    const lastSpace = cut.lastIndexOf(' ');
+    return (lastSpace > 40 ? cut.slice(0, lastSpace) : cut).trim() + '…';
+  }
+
+  // ---------- theme ----------
+  function systemTheme(){
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function applyTheme(theme){
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem(THEME_KEY, theme);
+    els.themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+  }
+  function initTheme(){
+    const saved = localStorage.getItem(THEME_KEY);
+    applyTheme(saved || systemTheme());
+  }
+  els.themeToggle.addEventListener('click', ()=>{
+    const current = document.documentElement.getAttribute('data-theme');
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  });
+
+  // ---------- language ----------
+  function populateLead(){
+    const dict = t();
+    const prevIndex = leadIndex;
+    els.lead.innerHTML = dict.leadOptions.map((val, i)=>
+      `<option value="${i}">${dict.leadLabels[i]}</option>`
+    ).join('');
+    els.lead.selectedIndex = Math.min(prevIndex, dict.leadOptions.length - 1);
+  }
+
+  function applyLanguage(newLang){
+    lang = newLang;
+    const dict = t();
+    document.querySelectorAll('[data-i18n]').forEach(el=>{
+      const key = el.getAttribute('data-i18n');
+      if(typeof dict[key] === 'string') el.textContent = dict[key];
+    });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el=>{
+      const key = el.getAttribute('data-i18n-ph');
+      if(typeof dict[key] === 'string') el.placeholder = dict[key];
+    });
+    els.copyBtn.textContent = dict.btnCopy;
+    populateLead();
+    [...els.langSwitch.querySelectorAll('button')].forEach(btn=>{
+      btn.classList.toggle('active', btn.dataset.lang === newLang);
+    });
+    localStorage.setItem(LANG_KEY, newLang);
+    updateShareButtonLabel();
+    update();
+  }
+
+  els.langSwitch.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    applyLanguage(btn.dataset.lang);
+  });
+
+  function detectInitialLang(){
+    const saved = localStorage.getItem(LANG_KEY);
+    if(saved && LANG[saved]) return saved;
+    const nav = (navigator.language || 'en').toLowerCase();
+    if(nav.startsWith('ja')) return 'ja';
+    if(nav.startsWith('zh')) return 'zh';
+    return 'en';
+  }
+
+  // ---------- state persistence ----------
+  function loadState(){
+    try{
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      if(saved.title) els.title.value = saved.title;
+      if(saved.paragraph) els.paragraph.value = saved.paragraph;
+      if(saved.link) els.link.value = saved.link;
+      if(typeof saved.leadIndex === 'number') leadIndex = saved.leadIndex;
+      if(saved.shorten) els.shorten.value = saved.shorten;
+      if(saved.platform) platform = saved.platform;
+    }catch(e){}
+  }
+
+  function saveState(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      title: els.title.value,
+      paragraph: els.paragraph.value,
+      link: els.link.value,
+      leadIndex: els.lead.selectedIndex,
+      shorten: els.shorten.value,
+      platform: platform,
+    }));
+  }
+
+  function updateShareButtonLabel(){
+    const dict = t();
+    const label = dict.shareLabel[platform];
+    if(label){
+      els.shareBtn.style.display = 'flex';
+      els.shareBtn.textContent = label;
+    } else {
+      els.shareBtn.style.display = 'none';
+    }
+  }
+
+  function setActivePlatform(val){
+    platform = val;
+    const idx = PLATFORMS.indexOf(val);
+    els.pill.style.transform = `translateX(${idx * 100}%)`;
+    [...els.platform.querySelectorAll('button')].forEach(btn=>{
+      btn.classList.toggle('active', btn.dataset.val === val);
+    });
+    const meta = PLATFORM_META[val];
+    els.phoneBar.style.setProperty('--app-color', meta.app);
+    els.phoneScreen.style.setProperty('--screen-bg', meta.bg);
+    els.preview.style.setProperty('--bubble-color', meta.bubble);
+    updateShareButtonLabel();
+  }
+
+  function escapeHtml(str){
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function buildMessage(){
+    const dict = t();
+    const title = els.title.value.trim();
+    let paragraph = els.paragraph.value.trim();
+    const link = els.link.value.trim();
+    const lead = dict.leadOptions[els.lead.selectedIndex] || '';
+    const limit = parseInt(els.shorten.value, 10) || 0;
+    const prefix = dict.linkPrefix[platform];
+
+    paragraph = truncate(paragraph, limit);
+
+    let titleLine, bodyLine, linkLine;
+
+    if(platform === 'whatsapp'){
+      titleLine = title ? `*${title}*` : '';
+      bodyLine = paragraph;
+      linkLine = link ? `${prefix} ${link}` : '';
+    } else if(platform === 'line'){
+      titleLine = title ? `【${title}】` : '';
+      bodyLine = paragraph;
+      linkLine = link ? `${prefix} ${link}` : '';
+    } else {
+      titleLine = title;
+      bodyLine = paragraph;
+      linkLine = link ? `${prefix} ${link}` : '';
+    }
+
+    const lines = [];
+    if(lead) lines.push(lead);
+    if(titleLine) lines.push(titleLine);
+    if(bodyLine) lines.push('', bodyLine);
+    if(linkLine) lines.push('', linkLine);
+
+    return lines.join('\n').trim();
+  }
+
+  function now(){
+    const d = new Date();
+    let h = d.getHours(), m = d.getMinutes();
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return `${h}:${m.toString().padStart(2,'0')} ${ampm}`;
+  }
+
+  function renderPreview(text){
+    const dict = t();
+    if(!text){
+      els.preview.innerHTML = `<span class="empty">${dict.previewEmpty}</span>`;
+      els.preview.classList.add('empty');
+      return;
+    }
+    els.preview.classList.remove('empty');
+    let html = escapeHtml(text);
+    html = html.replace(/\*(.+?)\*/g, '<b>$1</b>');
+    html = html.replace(/(https?:\/\/[^\s]+)/g, '<span class="lnk">$1</span>');
+    html += `<span class="meta">${now()}${platform==='whatsapp' ? ' <span class="tick">✓✓</span>' : ''}</span>`;
+    els.preview.innerHTML = html;
+  }
+
+  function update(){
+    const text = buildMessage();
+    renderPreview(text);
+
+    const len = els.paragraph.value.length;
+    els.charcount.textContent = t().charUnit(len);
+    els.charcount.classList.toggle('over', len > 400);
+
+    saveState();
+  }
+
+  // ---------- history ----------
+  function getHistory(){
+    try{ return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); }catch(e){ return []; }
+  }
+  function saveHistory(entry){
+    let list = getHistory();
+    list = list.filter(item => item.title !== entry.title || item.link !== entry.link);
+    list.unshift(entry);
+    list = list.slice(0, 5);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
+    renderHistory();
+  }
+  function relativeTime(ts){
+    const dict = t();
+    const diff = Math.floor((Date.now() - ts) / 1000);
+    if(diff < 60) return dict.justNow;
+    if(diff < 3600) return dict.minAgo(Math.floor(diff/60));
+    if(diff < 86400) return dict.hourAgo(Math.floor(diff/3600));
+    return dict.dayAgo(Math.floor(diff/86400));
+  }
+  function renderHistory(){
+    const dict = t();
+    const list = getHistory();
+    els.historyList.innerHTML = '';
+    els.historyEmpty.style.display = list.length ? 'none' : 'block';
+    list.forEach(entry=>{
+      const li = document.createElement('li');
+      const btn = document.createElement('button');
+      btn.innerHTML = `<span class="htitle">${escapeHtml(entry.title || dict.untitled)}</span><span class="htime">${relativeTime(entry.ts)} · ${entry.platform}</span>`;
+      btn.addEventListener('click', ()=>{
+        els.title.value = entry.title;
+        els.paragraph.value = entry.paragraph;
+        els.link.value = entry.link;
+        leadIndex = entry.leadIndex || 0;
+        populateLead();
+        els.shorten.value = entry.shorten;
+        setActivePlatform(entry.platform);
+        update();
+      });
+      li.appendChild(btn);
+      els.historyList.appendChild(li);
+    });
+  }
+  function recordCurrentToHistory(){
+    if(!els.title.value.trim() && !els.paragraph.value.trim()) return;
+    saveHistory({
+      title: els.title.value.trim(),
+      paragraph: els.paragraph.value.trim(),
+      link: els.link.value.trim(),
+      leadIndex: els.lead.selectedIndex,
+      shorten: els.shorten.value,
+      platform: platform,
+      ts: Date.now(),
+    });
+  }
+
+  els.platform.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    setActivePlatform(btn.dataset.val);
+    update();
+  });
+
+  [els.title, els.paragraph, els.link, els.lead, els.shorten].forEach(el=>{
+    el.addEventListener('input', update);
+    el.addEventListener('change', update);
+  });
+
+  els.copyBtn.addEventListener('click', async ()=>{
+    const text = buildMessage();
+    if(!text) return;
+    try{
+      await navigator.clipboard.writeText(text);
+    }catch(e){
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    const dict = t();
+    els.copyBtn.textContent = dict.btnCopied;
+    els.copyBtn.classList.add('copied', 'pop');
+    setTimeout(()=>{
+      els.copyBtn.textContent = dict.btnCopy;
+      els.copyBtn.classList.remove('copied', 'pop');
+    }, 1500);
+    recordCurrentToHistory();
+  });
+
+  els.shareBtn.addEventListener('click', ()=>{
+    const text = buildMessage();
+    if(!text) return;
+    let url;
+    if(platform === 'whatsapp'){
+      url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    } else if(platform === 'line'){
+      url = `https://line.me/R/msg/text/?${encodeURIComponent(text)}`;
+    }
+    if(url) window.open(url, '_blank', 'noopener');
+    recordCurrentToHistory();
+  });
+
+  els.clearHistory.addEventListener('click', ()=>{
+    localStorage.removeItem(HISTORY_KEY);
+    renderHistory();
+  });
+
+  els.resetBtn.addEventListener('click', ()=>{
+    els.title.value = '';
+    els.paragraph.value = '';
+    els.link.value = '';
+    leadIndex = 0;
+    populateLead();
+    els.shorten.value = '0';
+    localStorage.removeItem(STORAGE_KEY);
+    update();
+  });
+
+  initTheme();
+  loadState();
+  applyLanguage(detectInitialLang());
+  setActivePlatform(platform);
+  renderHistory();
+  update();
+})();
+</script>
+</body>
+</html>
